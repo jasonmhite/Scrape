@@ -51,13 +51,18 @@ def update(matchlist, configfile):
 
 def download(matches):
     for entry in matches:
-        dl = urllib2.urlopen(entry[ 2 ], timeout=2)
-        with open("/Users/jmhite/Automatically Downloaded/" + entry[1] + '.torrent', 'w') as outfile:
-            outfile.write(dl.read())
-        #os.system("/usr/local/bin/growlnotify -s -t Scrape -i torrent -m 'Downloading " + str(entry[1]) + "'" )
+        try:
+            dl = urllib2.urlopen(entry[ 2 ], timeout=2)
+            with open("/Users/jmhite/Automatically Downloaded/" + entry[1] + '.torrent', 'w') as outfile:
+                outfile.write(dl.read())
+        except:
+	    print "Error downloading"
+	    sys.exit(1)
+	#os.system("/usr/local/bin/growlnotify -s -t Scrape -i torrent -m 'Downloading " + str(entry[1]) + "'" )
 
 tab = build_searchtable("list.cfg")
 result = scan_searchtable(tab)
-download(result)
+
 update(result, "list.cfg")
+
 
