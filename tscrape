@@ -9,8 +9,12 @@ defaults = {"zeropaddedq" : "true"}
 
 def build_searchtable(configfile):
     table = []
-    config = ConfigParser.SafeConfigParser(defaults)
-    config.read(configfile)
+    try:
+        config = ConfigParser.SafeConfigParser(defaults)
+        config.read(configfile)
+    except:
+	raise NameError('Config Parse Error')
+
     for sect in config.sections():
         searchstring = config.get(sect, 'sstring')
         episode = config.get(sect, 'currentepisode')
@@ -41,8 +45,11 @@ def scan_searchtable(searchtable):
     return(hits)
 
 def update(matchlist, configfile):
-    newconfig = ConfigParser.SafeConfigParser()
-    newconfig.read(configfile)
+    try:
+        newconfig = ConfigParser.SafeConfigParser()
+        newconfig.read(configfile)
+    except:
+	raise NameError('Config Replace Error')
     for m in matchlist:
         i = int(newconfig.get(m[0], "currentepisode")) + 1
         newconfig.set(m[0], "currentepisode", str(i))
@@ -56,8 +63,8 @@ def download(matches):
             with open("/Users/jmhite/Automatically Downloaded/" + entry[1] + '.torrent', 'w') as outfile:
                 outfile.write(dl.read())
         except:
-	    print "Error downloading"
-	    sys.exit(1)
+	    raise NameError('Download Error')
+
 	#os.system("/usr/local/bin/growlnotify -s -t Scrape -i torrent -m 'Downloading " + str(entry[1]) + "'" )
 
 tab = build_searchtable("list.cfg")
