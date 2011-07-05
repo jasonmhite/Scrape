@@ -69,7 +69,7 @@ def download(matches):
 
 tab = build_searchtable("list.cfg")
 result = scan_searchtable(tab)
-
+download(result)
 update(result, "list.cfg")
 
 
