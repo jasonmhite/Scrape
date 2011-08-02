@@ -9,8 +9,12 @@ defaults = {"zeropaddedq" : "true"}
 
 def build_searchtable(configfile):
     table = []
-    config = ConfigParser.SafeConfigParser(defaults)
-    config.read(configfile)
+    try:
+        config = ConfigParser.SafeConfigParser(defaults)
+        config.read(configfile)
+    except:
+	raise NameError('Config Parse Error')
+
     for sect in config.sections():
         searchstring = config.get(sect, 'sstring')
         episode = config.get(sect, 'currentepisode')
@@ -41,23 +45,31 @@ def scan_searchtable(searchtable):
     return(hits)
 
 def update(matchlist, configfile):
-    newconfig = ConfigParser.SafeConfigParser()
-    newconfig.read(configfile)
-    for m in matchlist:
-        i = int(newconfig.get(m[0], "currentepisode")) + 1
-        newconfig.set(m[0], "currentepisode", str(i))
-    with open(configfile, "wb") as updated:
-        newconfig.write(updated)
-
+    try:
+        newconfig = ConfigParser.SafeConfigParser()
+        newconfig.read(configfile)
+   
+        for m in matchlist:
+            i = int(newconfig.get(m[0], "currentepisode")) + 1
+            newconfig.set(m[0], "currentepisode", str(i))
+        with open(configfile, "wb") as updated:
+            newconfig.write(updated)
+    except:
+	raise NameError('Config Replace Error')
 def download(matches):
     for entry in matches:
-        dl = urllib2.urlopen(entry[ 2 ], timeout=2)
-        with open("/Users/jmhite/Automatically Downloaded/" + entry[1] + '.torrent', 'w') as outfile:
-            outfile.write(dl.read())
-        #os.system("/usr/local/bin/growlnotify -s -t Scrape -i torrent -m 'Downloading " + str(entry[1]) + "'" )
+        try:
+            dl = urllib2.urlopen(entry[ 2 ], timeout=2)
+            with open("/Users/jmhite/Automatically Downloaded/" + entry[1] + '.torrent', 'w') as outfile:
+                outfile.write(dl.read())
+        except:
+	    raise NameError('Download Error')
+
+	#os.system("/usr/local/bin/growlnotify -s -t Scrape -i torrent -m 'Downloading " + str(entry[1]) + "'" )
 
 tab = build_searchtable("list.cfg")
 result = scan_searchtable(tab)
 download(result)
 update(result, "list.cfg")
+
 
