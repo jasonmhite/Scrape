@@ -58,18 +58,19 @@ def update(matchlist, configfile):
 	raise NameError('Config Replace Error')
 def download(matches):
     for entry in matches:
-        try:
+        rr = []
+	try:
             dl = urllib2.urlopen(entry[ 2 ], timeout=2)
             with open("/Users/jmhite/Automatically Downloaded/" + entry[1] + '.torrent', 'w') as outfile:
                 outfile.write(dl.read())
+	    rr.append(entry)
         except:
 	    raise NameError('Download Error')
+	finally:
+	    update(rr, "list.cfg")
 
 	#os.system("/usr/local/bin/growlnotify -s -t Scrape -i torrent -m 'Downloading " + str(entry[1]) + "'" )
 
 tab = build_searchtable("list.cfg")
 result = scan_searchtable(tab)
 download(result)
-update(result, "list.cfg")
-
-
