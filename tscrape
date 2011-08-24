@@ -63,6 +63,7 @@ def download(matches):
             dl = urllib2.urlopen(entry[ 2 ], timeout=2)
             with open("/Users/jmhite/Automatically Downloaded/" + entry[1] + '.torrent', 'w') as outfile:
                 outfile.write(dl.read())
+                print entry[1]
 	    rr.append(entry)
         except:
 	    raise NameError('Download Error')
