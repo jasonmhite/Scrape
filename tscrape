@@ -5,6 +5,8 @@ import ConfigParser
 import string
 import os
 
+os.chdir('/Users/jmhite/Library/RSS')
+
 defaults = {"zeropaddedq" : "true"}
 
 def build_searchtable(configfile):
