@@ -50,9 +50,10 @@ class MyDaemon(Daemon):
 
     def run(self):
         self.loadqueue()
-        with open('testoutput.txt', 'w') as thefile:
-            thefile.write('hello')
-            sleep(10)
+        while True:
+            self.update()
+            Worker(self.q, configfile).start()
+            sleep(3600)
 
     class Worker(threading.Thread): 
         def __init__(self, queue, configfile):
