@@ -23,7 +23,10 @@ class MyDaemon(Daemon):
 
     def run(self):
         self.check_new()
-        self.download()
+        for i in range(1, max([4, self.q.qsize()])):
+            self.Worker(self.q, self.updateq).start()
+        while threading.activeCount() > 1:
+            sleep(1)
         self.update()
         self.test()
 
@@ -90,6 +93,25 @@ class MyDaemon(Daemon):
         except:
             raise NameError('Config Replace Error')
         
+    class Worker(threading.Thread): 
+
+        def __init__(self, inqueue, outqueue):
+            self.inqueue = inqueue
+            self.outqueue = outqueue
+            threading.Thread.__init__(self)
+
+        def run(self):
+            while not self.inqueue.empty():
+                entry = self.inqueue.get()
+                try:
+                    dl = urllib2.urlopen(entry[ 2 ], timeout=2)
+                    with open("/Users/jmhite/Desktop/" + entry[1] + '.torrent', 'w') as outfile:
+                        outfile.write(dl.read())
+                    self.outqueue.put(entry[0])
+                    self.inqueue.task_done
+                except:
+                    raise NameError('Download Error')
+
 
     def test(self):
         with open("/Users/jmhite/Desktop/text.txt",'w') as thefile:
