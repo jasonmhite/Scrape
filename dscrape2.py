@@ -7,6 +7,9 @@ import os, sys
 from time import sleep
 import Queue
 import threading
+import transmissionrpc
+import glob
+import syslog
 
 class MyDaemon(Daemon):
 
@@ -16,10 +19,11 @@ class MyDaemon(Daemon):
         self.stderr = stderr
         self.pidfile = pidfile
         self.configfile = configfile
+        self.directory = '/Users/jmhite/Anime Weekly/'
         self.q = Queue.Queue(0)
         self.updateq = Queue.Queue(0)
-        self.tlock = threading.Lock()
-        self.testvar = []
+        syslog.openlog("dscrape")
+#       self.tlock = threading.Lock()
 
     def run(self):
         self.check_new()
@@ -28,7 +32,7 @@ class MyDaemon(Daemon):
         while threading.activeCount() > 1:
             sleep(1)
         self.update()
-        self.test()
+        self.signal_transmission()
 
     def check_new(self):
         defaults = {"zeropaddedq" : "true"}
@@ -36,7 +40,7 @@ class MyDaemon(Daemon):
             config = ConfigParser.SafeConfigParser(defaults)
             config.read(self.configfile)
         except:
-            raise NameError('Config Parse Error')
+            syslog.syslog(syslog.LOG_ALERT, 'Config Parse Error')
 
         table = []
         for sect in config.sections():
@@ -64,24 +68,10 @@ class MyDaemon(Daemon):
             return(res)
         return(res)
 
-    def download(self):
-        while not self.q.empty():
-            entry = self.q.get()
-            try:
-                dl = urllib2.urlopen(entry[ 2 ], timeout=2)
-                with open("/Users/jmhite/Desktop/" + entry[1] + '.torrent', 'w') as outfile:
-                    outfile.write(dl.read())
-                self.updateq.put(entry[0])
-            except:
-                raise NameError('Download Error')
-            self.q.task_done()
-
     def update(self):
         try:
             newconfig = ConfigParser.SafeConfigParser()
             newconfig.read(self.configfile)
-            with open("/Users/jmhite/Desktop/test2.txt", 'w') as thefile:
-                thefile.write("success")
                 
             while not self.updateq.empty():
                 uit = self.updateq.get()
@@ -91,8 +81,21 @@ class MyDaemon(Daemon):
             with open(self.configfile, "wb") as updated:
                 newconfig.write(updated)
         except:
-            raise NameError('Config Replace Error')
+            syslog.syslog(syslog.LOG_ALERT, 'Config Write Error')
         
+    def signal_transmission(self):
+        try:
+            tc = transmissionrpc.Client('localhost', port=9091)
+            for inf in glob.glob(os.path.join(self.directory, "*.torrent")):
+                try:
+                    tc.add_uri(inf, paused=True)
+                    sleep(2)
+                    os.remove(inf)
+                except:
+                    pass
+        except:
+            pass
+
     class Worker(threading.Thread): 
 
         def __init__(self, inqueue, outqueue):
@@ -105,21 +108,12 @@ class MyDaemon(Daemon):
                 entry = self.inqueue.get()
                 try:
                     dl = urllib2.urlopen(entry[ 2 ], timeout=2)
-                    with open("/Users/jmhite/Desktop/" + entry[1] + '.torrent', 'w') as outfile:
+                    with open(self.directory + entry[1] + '.torrent', 'w') as outfile:
                         outfile.write(dl.read())
                     self.outqueue.put(entry[0])
                     self.inqueue.task_done
                 except:
-                    raise NameError('Download Error')
-
-
-    def test(self):
-        with open("/Users/jmhite/Desktop/text.txt",'w') as thefile:
-            thefile.write("Test \n")
-            thefile.write(str(self.configfile) + "\n")
-            self.testvar.append('blank')
-            for i in self.testvar:
-                thefile.write(str(i) + "\n")
+                    syslog.syslog(syslog.LOG_ALERT, 'Download Error')
 
 if __name__ == "__main__":
     daemon = MyDaemon('/Users/jmhite/github/local/Scrape/list.cfg','/tmp/daemon-example.pid')
